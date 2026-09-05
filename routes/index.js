@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // routes/index.js
 const express = require('express');
 const router = express.Router();
@@ -345,3 +346,14 @@ router.get('/logout', (req, res) => {
 });
 
 module.exports = router;
+=======
+const express = require('express');
+const router = express.Router();
+
+// GET / - setup verification route
+router.get('/', (req, res) => {
+  res.render('dashboard');
+});
+
+module.exports = router;
+>>>>>>> 13ff59358dad07925d0d91d2280d8755bd10133b
