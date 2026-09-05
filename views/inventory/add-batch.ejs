@@ -1,0 +1,153 @@
+<%- include('../partials/header', { title: 'Add Batch' }) %>
+
+<div class="container mt-4" style="max-width: 600px;">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Add Batch</h3>
+    <a href="/inventory" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Back to Inventory
+    </a>
+  </div>
+
+  <div class="alert alert-info d-flex align-items-center">
+    <i class="bi bi-capsule me-2"></i>
+    <div>
+      Adding a batch for: <strong><%= medicine.name %></strong>
+      <span class="text-muted">(<%= medicine.category %> &middot; <%= medicine.unit %>)</span>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="POST" action="/inventory/<%= medicine.id %>/add-batch" class="needs-validation" novalidate id="addBatchForm">
+
+        <div class="mb-3">
+          <label for="batch_number" class="form-label">Batch Number <span class="text-danger">*</span></label>
+          <input
+            type="text"
+            class="form-control"
+            id="batch_number"
+            name="batch_number"
+            required
+            placeholder="e.g. BN-2026-0091"
+          >
+          <div class="invalid-feedback">Please enter the batch number.</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="expiry_date" class="form-label">Expiry Date <span class="text-danger">*</span></label>
+          <input
+            type="date"
+            class="form-control"
+            id="expiry_date"
+            name="expiry_date"
+            required
+          >
+          <div class="invalid-feedback" id="expiryFeedback">Please select a valid future expiry date.</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="quantity" class="form-label">Quantity <span class="text-danger">*</span></label>
+          <input
+            type="number"
+            class="form-control"
+            id="quantity"
+            name="quantity"
+            required
+            min="1"
+            step="1"
+            placeholder="e.g. 100"
+          >
+          <div class="invalid-feedback">Quantity must be a positive whole number.</div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="purchase_price" class="form-label">Purchase Price (₹) <span class="text-danger">*</span></label>
+            <input
+              type="number"
+              class="form-control"
+              id="purchase_price"
+              name="purchase_price"
+              required
+              min="0.01"
+              step="0.01"
+              placeholder="e.g. 45.50"
+            >
+            <div class="invalid-feedback">Purchase price must be a positive number.</div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="selling_price" class="form-label">Selling Price (₹) <span class="text-danger">*</span></label>
+            <input
+              type="number"
+              class="form-control"
+              id="selling_price"
+              name="selling_price"
+              required
+              min="0.01"
+              step="0.01"
+              placeholder="e.g. 60.00"
+            >
+            <div class="invalid-feedback">Selling price must be a positive number.</div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <a href="/inventory" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle"></i> Save Batch
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var form = document.getElementById('addBatchForm');
+    var expiryInput = document.getElementById('expiry_date');
+    var expiryFeedback = document.getElementById('expiryFeedback');
+
+    // Prevent picking a past date in the date picker itself
+    var today = new Date();
+    var minDate = new Date(today.getTime() + 24 * 60 * 60 * 1000); // tomorrow
+    expiryInput.min = minDate.toISOString().split('T')[0];
+
+    function validateExpiryDate() {
+      if (!expiryInput.value) {
+        expiryInput.setCustomValidity('Expiry date is required.');
+        expiryFeedback.textContent = 'Please select an expiry date.';
+        return;
+      }
+      var selected = new Date(expiryInput.value);
+      var now = new Date();
+      now.setHours(0, 0, 0, 0);
+      selected.setHours(0, 0, 0, 0);
+
+      if (selected <= now) {
+        expiryInput.setCustomValidity('Expiry date must be in the future.');
+        expiryFeedback.textContent = 'Expiry date must be a future date.';
+      } else {
+        expiryInput.setCustomValidity('');
+      }
+    }
+
+    expiryInput.addEventListener('input', validateExpiryDate);
+    expiryInput.addEventListener('change', validateExpiryDate);
+
+    form.addEventListener('submit', function (event) {
+      validateExpiryDate();
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  })();
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,144 @@
+<%- include('../partials/header', { title: 'New Purchase' }) %>
+
+<div class="container-fluid mt-4">
+  <h3 class="mb-3">New Purchase</h3>
+
+  <form action="/purchase/add" method="POST" id="purchaseForm">
+    <div id="purchaseData" data-medicines='<%- JSON.stringify(medicines) %>' style="display:none;"></div>
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label class="form-label">Supplier</label>
+        <div class="input-group">
+          <select name="supplier_id" id="supplier_id" class="form-select" required>
+            <option value="" disabled selected>Select supplier</option>
+            <% suppliers.forEach(function(s) { %>
+              <option value="<%= s.id %>"><%= s.name %></option>
+            <% }); %>
+          </select>
+          <a href="/suppliers/add" class="btn btn-outline-secondary">
+            <i class="bi bi-plus-circle"></i> New Supplier
+          </a>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Purchase Date</label>
+        <input type="date" name="purchase_date" class="form-control" required>
+      </div>
+    </div>
+
+    <h5 class="mt-4">Items</h5>
+    <div class="table-responsive">
+      <table class="table table-bordered bg-white" id="itemsTable">
+        <thead class="table-dark">
+          <tr>
+            <th>Medicine</th>
+            <th>Batch Number</th>
+            <th>Expiry Date</th>
+            <th>Qty</th>
+            <th>Purchase Price</th>
+            <th>Selling Price</th>
+            <th>Subtotal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody">
+          <!-- rows injected by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <button type="button" class="btn btn-outline-primary" id="addItemBtn">
+      <i class="bi bi-plus-circle"></i> Add Item
+    </button>
+
+    <div class="d-flex justify-content-end mt-3">
+      <h5>Total: ₹<span id="grandTotal">0.00</span></h5>
+    </div>
+
+    <input type="hidden" name="total_amount" id="total_amount" value="0">
+
+    <div class="mt-3">
+      <button type="submit" class="btn btn-success">
+        <i class="bi bi-check-circle"></i> Save Purchase
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  const MEDICINES = JSON.parse(document.getElementById('purchaseData').dataset.medicines);
+
+  let rowCount = 0;
+
+  function medicineOptions() {
+    return MEDICINES.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  }
+
+  function addRow() {
+    const idx = rowCount++; // unique id, never reused even after removals
+    const tr = document.createElement('tr');
+    tr.dataset.rowId = idx;
+    tr.innerHTML = `
+      <td>
+        <select name="items[${idx}][medicine_id]" class="form-select" required>
+          <option value="" disabled selected>Select</option>
+          ${medicineOptions()}
+        </select>
+      </td>
+      <td><input type="text" name="items[${idx}][batch_number]" class="form-control" required></td>
+      <td><input type="date" name="items[${idx}][expiry_date]" class="form-control" required></td>
+      <td><input type="number" name="items[${idx}][quantity]" class="form-control qty" min="1" value="1" required></td>
+      <td><input type="number" step="0.01" name="items[${idx}][purchase_price]" class="form-control price" min="0" value="0" required></td>
+      <td><input type="number" step="0.01" name="items[${idx}][selling_price]" class="form-control" min="0" value="0" required></td>
+      <td class="subtotal align-middle">0.00</td>
+      <td><button type="button" class="btn btn-sm btn-danger remove-row"><i class="bi bi-x-lg"></i></button></td>
+    `;
+    document.getElementById('itemsBody').appendChild(tr);
+  }
+
+  function recalcRow(tr) {
+    const qty = parseFloat(tr.querySelector('.qty').value) || 0;
+    const price = parseFloat(tr.querySelector('.price').value) || 0;
+    const subtotal = qty * price;
+    tr.querySelector('.subtotal').textContent = subtotal.toFixed(2);
+    return subtotal;
+  }
+
+  function recalcAll() {
+    let total = 0;
+    document.querySelectorAll('#itemsBody tr').forEach(tr => {
+      total += recalcRow(tr);
+    });
+    document.getElementById('grandTotal').textContent = total.toFixed(2);
+    document.getElementById('total_amount').value = total.toFixed(2);
+  }
+
+  document.getElementById('addItemBtn').addEventListener('click', () => {
+    addRow();
+  });
+
+  document.getElementById('itemsBody').addEventListener('input', (e) => {
+    if (e.target.classList.contains('qty') || e.target.classList.contains('price')) {
+      recalcAll();
+    }
+  });
+
+  document.getElementById('itemsBody').addEventListener('click', (e) => {
+    if (e.target.closest('.remove-row')) {
+      e.target.closest('tr').remove();
+      recalcAll();
+    }
+  });
+
+  addRow(); // start with one row
+
+  document.getElementById('purchaseForm').addEventListener('submit', function(e) {
+    if (document.querySelectorAll('#itemsBody tr').length === 0) {
+      e.preventDefault();
+      alert('Add at least one item to the purchase.');
+    }
+  });
+</script>
+
+<%- include('../partials/footer') %>

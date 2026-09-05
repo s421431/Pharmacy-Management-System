@@ -1,0 +1,172 @@
+<%- include('../partials/header', { title: 'Inventory' }) %>
+
+<div class="container-fluid mt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Inventory</h3>
+    <% if (user && user.role === 'admin') { %>
+      <a href="/inventory/add" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add Medicine
+      </a>
+    <% } %>
+  </div>
+
+  <!-- Search bar -->
+  <form method="GET" action="/inventory" class="row g-2 mb-3">
+    <div class="col-auto flex-grow-1">
+      <input
+        type="text"
+        name="search"
+        class="form-control"
+        placeholder="Search by medicine name or category..."
+        value="<%= typeof search !== 'undefined' ? search : '' %>"
+      >
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-outline-secondary">
+        <i class="bi bi-search"></i> Search
+      </button>
+    </div>
+    <% if (typeof search !== 'undefined' && search) { %>
+      <div class="col-auto">
+        <a href="/inventory" class="btn btn-outline-danger">Clear</a>
+      </div>
+    <% } %>
+  </form>
+
+  <!-- Legend -->
+  <div class="mb-2 small">
+    <span class="badge" style="background-color:#fff3cd;color:#664d03;border:1px solid #ffe69c;">&nbsp;&nbsp;</span>
+    Low stock (&lt; 10 units)
+    &nbsp;&nbsp;
+    <span class="badge" style="background-color:#f8d7da;color:#842029;border:1px solid #f5c2c7;">&nbsp;&nbsp;</span>
+    Expiring within 30 days
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle bg-white">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>GST %</th>
+          <th>Unit</th>
+          <th>Total Qty</th>
+          <th>Nearest Expiry</th>
+          <th style="min-width: 220px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (medicines && medicines.length > 0) { %>
+          <% medicines.forEach(function(med, index) { %>
+            <%
+              var isLowStock = Number(med.total_quantity) < 10;
+              var isExpiringSoon = false;
+              var daysToExpiry = null;
+              if (med.nearest_expiry) {
+                var expiryDate = new Date(med.nearest_expiry);
+                var today = new Date();
+                today.setHours(0,0,0,0);
+                expiryDate.setHours(0,0,0,0);
+                daysToExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+                isExpiringSoon = daysToExpiry <= 30;
+              }
+              var rowClass = '';
+              if (isExpiringSoon) {
+                rowClass = 'table-danger';
+              } else if (isLowStock) {
+                rowClass = 'table-warning';
+              }
+            %>
+            <tr class="<%= rowClass %>">
+              <td><%= index + 1 %></td>
+              <td><%= med.name %></td>
+              <td><%= med.category %></td>
+              <td><%= med.gst_percent %>%</td>
+              <td><%= med.unit %></td>
+              <td>
+                <%= med.total_quantity %>
+                <% if (isLowStock) { %>
+                  <span class="badge bg-warning text-dark ms-1">Low</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (med.nearest_expiry) { %>
+                  <%= new Date(med.nearest_expiry).toLocaleDateString('en-IN') %>
+                  <% if (isExpiringSoon) { %>
+                    <span class="badge bg-danger ms-1">
+                      <% if (daysToExpiry < 0) { %>Expired<% } else { %><%= daysToExpiry %>d left<% } %>
+                    </span>
+                  <% } %>
+                <% } else { %>
+                  <span class="text-muted">—</span>
+                <% } %>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  <a href="/inventory/<%= med.id %>/add-batch" class="btn btn-sm btn-success">
+                    <i class="bi bi-plus"></i> Add Batch
+                  </a>
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#batches-<%= med.id %>"
+                    aria-expanded="false"
+                    aria-controls="batches-<%= med.id %>"
+                  >
+                    <i class="bi bi-list-ul"></i> View Batches
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="8" class="p-0 border-0">
+                <div class="collapse" id="batches-<%= med.id %>">
+                  <div class="p-3 bg-light">
+                    <% if (med.batches && med.batches.length > 0) { %>
+                      <table class="table table-sm table-striped mb-0">
+                        <thead>
+                          <tr>
+                            <th>Batch No.</th>
+                            <th>Expiry Date</th>
+                            <th>Quantity</th>
+                            <th>Purchase Price</th>
+                            <th>Selling Price</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% med.batches.forEach(function(batch) { %>
+                            <tr>
+                              <td><%= batch.batch_number %></td>
+                              <td><%= new Date(batch.expiry_date).toLocaleDateString('en-IN') %></td>
+                              <td><%= batch.quantity %></td>
+                              <td>₹<%= batch.purchase_price %></td>
+                              <td>₹<%= batch.selling_price %></td>
+                            </tr>
+                          <% }); %>
+                        </tbody>
+                      </table>
+                    <% } else { %>
+                      <p class="text-muted mb-0">No batch details loaded. Click "Add Batch" to create one.</p>
+                    <% } %>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              No medicines found<% if (typeof search !== 'undefined' && search) { %> for "<%= search %>"<% } %>.
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<%- include('../partials/footer') %>
