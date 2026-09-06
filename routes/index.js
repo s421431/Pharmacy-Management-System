@@ -320,29 +320,4 @@ router.post('/suppliers/add', (req, res) => {
   res.redirect('/purchase/add');
 });
 
-<<<<<<< HEAD
 module.exports = router;
-=======
-// Auth routes
-router.get('/login', (req, res) => {
-  res.render('login', { error: null });
-});
-
-router.post('/login', (req, res) => {
-  res.redirect('/inventory');
-});
-
-router.get('/register', (req, res) => {
-  res.render('register', { error: null });
-});
-
-router.post('/register', (req, res) => {
-  res.redirect('/login?registered=true');
-});
-
-router.get('/logout', (req, res) => {
-  res.redirect('/login');
-});
-
-module.exports = router;
->>>>>>> 632f1bce62747a8861f8be11fc2031b7028c5794
