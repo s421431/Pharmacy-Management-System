@@ -3,14 +3,23 @@
 <div class="container-fluid mt-4">
   <h3 class="mb-3">New Supplier</h3>
 
-  <form action="/suppliers/add" method="POST" class="col-md-8">
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <form action="/suppliers/add" method="POST" class="col-md-8" novalidate id="supplierForm">
     <div class="mb-3">
       <label class="form-label">Name</label>
       <input type="text" name="name" class="form-control" required>
+      <div class="invalid-feedback">Supplier name is required.</div>
     </div>
     <div class="mb-3">
       <label class="form-label">Phone</label>
       <input type="text" name="phone" class="form-control" pattern="[0-9+\-\s]{7,15}" required>
+      <div class="invalid-feedback">Enter a valid phone number (7–15 digits).</div>
     </div>
     <div class="mb-3">
       <label class="form-label">Address</label>
@@ -20,11 +29,30 @@
       <label class="form-label">GST Number</label>
       <input type="text" name="gst_number" class="form-control">
     </div>
-    <button type="submit" class="btn btn-success">
+    <button type="submit" class="btn btn-success" id="supplierSubmitBtn">
       <i class="bi bi-check-circle"></i> Save Supplier
     </button>
     <a href="/purchase/add" class="btn btn-outline-secondary">Cancel</a>
   </form>
 </div>
+
+<script>
+  (function () {
+    'use strict';
+    const form = document.getElementById('supplierForm');
+    form.addEventListener('submit', function (event) {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+        form.classList.add('was-validated');
+        return;
+      }
+      const btn = document.getElementById('supplierSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+      form.classList.add('was-validated');
+    }, false);
+  })();
+</script>
 
 <%- include('../partials/footer') %>

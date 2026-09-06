@@ -133,11 +133,18 @@
 
   addRow(); // start with one row
 
-  document.getElementById('purchaseForm').addEventListener('submit', function(e) {
+    document.getElementById('purchaseForm').addEventListener('submit', function(e) {
     if (document.querySelectorAll('#itemsBody tr').length === 0) {
       e.preventDefault();
       alert('Add at least one item to the purchase.');
+      return;
     }
+
+    // Prevent double-submit: disable the button and show a spinner immediately.
+    // The form still submits normally (this doesn't call e.preventDefault()).
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
   });
 </script>
 
