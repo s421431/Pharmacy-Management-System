@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "description": "Pharmacy Management System - Node.js + Express + MySQL + EJS",
   "main": "server.js",
+<<<<<<< HEAD
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "initdb": "node config/initDb.js"
   },
+=======
+>>>>>>> 632f1bce62747a8861f8be11fc2031b7028c5794
   "keywords": [
     "pharmacy",
     "express",
@@ -16,13 +19,25 @@
   ],
   "author": "",
   "license": "ISC",
+<<<<<<< HEAD
+=======
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "initdb": "node config/initDb.js"
+  },
+>>>>>>> 632f1bce62747a8861f8be11fc2031b7028c5794
   "dependencies": {
     "bcrypt": "^6.0.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-session": "^1.19.0",
+<<<<<<< HEAD
     "mysql2": "^3.11.0"
+=======
+    "mysql2": "^3.24.3"
+>>>>>>> 632f1bce62747a8861f8be11fc2031b7028c5794
   },
   "devDependencies": {
     "nodemon": "^3.1.4"

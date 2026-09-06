@@ -30,4 +30,9 @@ async function testConnection() {
   }
 }
 
+<<<<<<< HEAD
 module.exports = { pool, testConnection };
+=======
+module.exports = pool;
+module.exports.testConnection = testConnection;
+>>>>>>> 632f1bce62747a8861f8be11fc2031b7028c5794

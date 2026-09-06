@@ -4,10 +4,22 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+<<<<<<< HEAD
 const session = require('express-session');
 
 const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
+=======
+
+const indexRoutes = require('./routes/index');
+const authRoutes = require('./routes/auth');
+const inventoryRoutes = require('./routes/inventory');
+const purchaseRoutes = require('./routes/purchase');
+const supplierRoutes = require('./routes/supplier');
+const errorHandler = require('./middleware/errorHandler');
+const db = require('./config/db');
+
+>>>>>>> 632f1bce62747a8861f8be11fc2031b7028c5794
 const { testConnection } = require('./config/db');
 
 const app = express();
@@ -41,6 +53,11 @@ app.use((req, res, next) => {
 // Routes
 app.use('/', authRoutes);
 app.use('/', indexRoutes);
+app.use('/', authRoutes);
+app.use('/inventory', inventoryRoutes);
+app.use('/purchase', purchaseRoutes);
+app.use('/suppliers', supplierRoutes);
+app.use( errorHandler);
 
 app.listen(PORT, async () => {
   console.log(`Pharmacy Management System running at http://localhost:${PORT}`);
@@ -52,4 +69,8 @@ app.listen(PORT, async () => {
   if (!dbOk) {
     console.error('⚠️  Server is running, but database connection failed. Check your .env values.');
   }
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> 632f1bce62747a8861f8be11fc2031b7028c5794

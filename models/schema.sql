@@ -92,3 +92,12 @@ CREATE TABLE SaleItem (
   FOREIGN KEY (sale_id) REFERENCES Sale(id) ON DELETE RESTRICT,
   FOREIGN KEY (batch_id) REFERENCES Batch(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
+
+-- Adds invoice numbering support for the Billing module (Day 8+)
+ALTER TABLE Sale ADD COLUMN invoice_number VARCHAR(20) UNIQUE AFTER id;
+
+-- Atomic per-year counter, avoids race conditions under concurrent requests
+CREATE TABLE InvoiceCounter (
+  year INT PRIMARY KEY,
+  last_number INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
