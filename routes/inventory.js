@@ -6,8 +6,7 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 router.use(requireAuth);
 
 // GET /inventory — medicine list with total stock qty + nearest expiry per medicine.
-// Optional ?search= filters by medicine name (parameterized LIKE).
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   const { search } = req.query;
   try {
     let sql = `
@@ -38,25 +37,32 @@ router.get('/add', requireRole('admin'), (req, res) => {
 });
 
 // POST /inventory/add — create a new medicine (admin only)
-router.post('/add', requireRole('admin'), async (req, res) => {
+router.post('/add', requireRole('admin'), async (req, res, next) => {
   const { name, category, gst_percent, unit } = req.body;
+  
   if (!name || !unit) {
     return res.status(400).json({ error: 'name and unit are required' });
   }
+
+  const gst = gst_percent === undefined || gst_percent === '' ? 0 : Number(gst_percent);
+  if (isNaN(gst) || gst < 0) {
+    return res.status(400).json({ error: 'gst_percent must be a non-negative number' });
+  }
+
   try {
     const [result] = await db.query(
       'INSERT INTO Medicine (name, category, gst_percent, unit) VALUES (?, ?, ?, ?)',
-      [name, category || null, gst_percent || 0, unit]
+      [name, category || null, gst, unit]
     );
-    res.status(201).json({ id: result.insertId, name, category, gst_percent, unit });
+    res.status(201).json({ id: result.insertId, name, category, gst_percent: gst, unit });
   } catch (err) {
     console.error('Add medicine error:', err.message);
     res.status(500).json({ error: 'Failed to add medicine' });
   }
 });
 
-// GET /inventory/:id/add-batch — form data for adding a batch to a medicine
-router.get('/:id/add-batch', requireRole('admin'), async (req, res) => {
+// GET /inventory/:id/add-batch — form data for adding a batch
+router.get('/:id/add-batch', requireRole('admin'), async (req, res, next) => {
   try {
     const [rows] = await db.query('SELECT id, name FROM Medicine WHERE id = ?', [req.params.id]);
     if (rows.length === 0) {
@@ -69,19 +75,29 @@ router.get('/:id/add-batch', requireRole('admin'), async (req, res) => {
   }
 });
 
-// POST /inventory/:id/add-batch — insert a batch for a medicine (admin only)
-// Validates expiry_date is in the future and quantity > 0.
-router.post('/:id/add-batch', requireRole('admin'), async (req, res) => {
+// POST /inventory/:id/add-batch — insert a batch for a medicine
+router.post('/:id/add-batch', requireRole('admin'), async (req, res, next) => {
   const medicineId = req.params.id;
   const { batch_number, expiry_date, quantity, purchase_price, selling_price } = req.body;
 
   if (!batch_number || !expiry_date || !quantity || !purchase_price || !selling_price) {
     return res.status(400).json({ error: 'All batch fields are required' });
   }
-  if (Number(quantity) <= 0) {
+
+  const qty = Number(quantity);
+  const purchasePrice = Number(purchase_price);
+  const sellingPrice = Number(selling_price);
+
+  if (isNaN(qty) || qty <= 0) {  
     return res.status(400).json({ error: 'quantity must be greater than 0' });
   }
-  if (new Date(expiry_date) <= new Date()) {
+  if (isNaN(purchasePrice) || purchasePrice <= 0) {
+    return res.status(400).json({ error: 'purchase_price must be a number greater than 0' });
+  }
+  if (isNaN(sellingPrice) || sellingPrice <= 0) {
+    return res.status(400).json({ error: 'selling_price must be a number greater than 0' });
+  }
+  if (isNaN(Date.parse(expiry_date)) || new Date(expiry_date) <= new Date()) {
     return res.status(400).json({ error: 'expiry_date must be in the future' });
   }
 
@@ -94,17 +110,17 @@ router.post('/:id/add-batch', requireRole('admin'), async (req, res) => {
     const [result] = await db.query(
       `INSERT INTO Batch (medicine_id, batch_number, expiry_date, quantity, purchase_price, selling_price)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [medicineId, batch_number, expiry_date, quantity, purchase_price, selling_price]
+      [medicineId, batch_number, expiry_date, qty, purchasePrice, sellingPrice]
     );
-    res.status(201).json({ id: result.insertId, medicine_id: medicineId, batch_number, expiry_date, quantity });
+    res.status(201).json({ id: result.insertId, medicine_id: medicineId, batch_number, expiry_date, quantity: qty });
   } catch (err) {
     console.error('Add batch error:', err.message);
     res.status(500).json({ error: 'Failed to add batch' });
   }
 });
 
-// POST /inventory/batch/:batchId/delete — delete a batch (admin only)
-router.post('/batch/:batchId/delete', requireRole('admin'), async (req, res) => {
+// POST /inventory/batch/:batchId/delete — delete a batch
+router.post('/batch/:batchId/delete', requireRole('admin'), async (req, res, next) => {
   try {
     const [result] = await db.query('DELETE FROM Batch WHERE id = ?', [req.params.batchId]);
     if (result.affectedRows === 0) {
@@ -113,12 +129,15 @@ router.post('/batch/:batchId/delete', requireRole('admin'), async (req, res) => 
     res.json({ message: 'Batch deleted' });
   } catch (err) {
     console.error('Delete batch error:', err.message);
-    res.status(409).json({ error: 'Cannot delete: batch is referenced in purchase/sale records' });
+    if (err.code === 'ER_ROW_IS_REFERENCED_2' || err.code === 'ER_ROW_IS_REFERENCED') {
+      return res.status(409).json({ error: 'Cannot delete: batch is referenced in purchase/sale records' });
+    }
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // GET /inventory/low-stock — medicines whose total batch quantity < 10
-router.get('/low-stock', async (req, res) => {
+router.get('/low-stock', async (req, res, next) => {
   try {
     const [rows] = await db.query(`
       SELECT m.id, m.name, m.unit, COALESCE(SUM(b.quantity), 0) AS total_quantity
@@ -136,7 +155,7 @@ router.get('/low-stock', async (req, res) => {
 });
 
 // GET /inventory/near-expiry — batches expiring within 30 days
-router.get('/near-expiry', async (req, res) => {
+router.get('/near-expiry', async (req, res, next) => {
   try {
     const [rows] = await db.query(`
       SELECT b.id AS batch_id, b.batch_number, b.expiry_date, b.quantity,
