@@ -3,10 +3,7 @@
   "version": "1.0.0",
   "description": "Pharmacy Management System - Node.js + Express + MySQL + EJS",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
-  },
+
   "keywords": [
     "pharmacy",
     "express",
@@ -15,8 +12,7 @@
   ],
   "author": "",
   "license": "ISC",
-  "description": "Pharmacy Management System",
-  "main": "server.js",
+
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
@@ -27,16 +23,10 @@
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
-    "express-session": "^1.19.0",
-    "dependencies": {
-    "dotenv": "^16.4.5",
-    "ejs": "^3.1.10",
-    "express": "^4.19.2",
-    "mysql2": "^3.11.0",
+    "express-session": "^1.19.0"
   },
   "devDependencies": {
-
-    "nodemon": "^3.1.4"
+     "nodemon": "^3.1.4"
   }
 }
-}
+
