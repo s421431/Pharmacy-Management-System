@@ -139,15 +139,19 @@
     expiryInput.addEventListener('input', validateExpiryDate);
     expiryInput.addEventListener('change', validateExpiryDate);
 
-    form.addEventListener('submit', function (event) {
+        form.addEventListener('submit', function (event) {
       validateExpiryDate();
       if (!form.checkValidity()) {
         event.preventDefault();
         event.stopPropagation();
+        form.classList.add('was-validated');
+        return;
       }
       form.classList.add('was-validated');
+      var btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
     }, false);
   })();
 </script>
-
 <%- include('../partials/footer') %>

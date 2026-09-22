@@ -4,9 +4,11 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const session = require('express-session');
 
 const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
+<<<<<<< HEAD
 const inventoryRoutes = require('./routes/inventory');
 const purchaseRoutes = require('./routes/purchase');
 const supplierRoutes = require('./routes/supplier');
@@ -15,6 +17,8 @@ const reportsRoutes = require('./routes/reports');
 const errorHandler = require('./middleware/errorHandler');
 const db = require('./config/db');
 
+=======
+>>>>>>> 2a2cc3c32194044fc173ab2e7c9408884c9f5746
 const { testConnection } = require('./config/db');
 
 const app = express();
@@ -31,15 +35,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Sessions (needed for login/logout) — must be set up BEFORE any routes
+app.use(session({
+  secret: 'pharmacy-dev-secret-change-this-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8 hour session
+}));
+
+// Make the logged-in user available to every view automatically
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
+});
+
 // Routes
-app.use('/', indexRoutes);
 app.use('/', authRoutes);
+<<<<<<< HEAD
 app.use('/inventory', inventoryRoutes);
 app.use('/purchase', purchaseRoutes);
 app.use('/suppliers', supplierRoutes);
 app.use('/billing', billingRoutes);
 app.use('/reports', reportsRoutes);
 app.use(errorHandler);
+=======
+app.use('/', indexRoutes);
+>>>>>>> 2a2cc3c32194044fc173ab2e7c9408884c9f5746
 
 app.listen(PORT, async () => {
   console.log(`Pharmacy Management System running at http://localhost:${PORT}`);

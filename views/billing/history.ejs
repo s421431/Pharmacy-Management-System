@@ -1,0 +1,44 @@
+<%- include('../partials/header') %>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Billing History</h3>
+    <a href="/billing/create" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg"></i> New Sale
+    </a>
+  </div>
+
+  <input type="text" id="searchInput" class="form-control mb-3" placeholder="Search by invoice # or customer...">
+
+  <table class="table table-hover" id="salesTable">
+    <thead class="table-light">
+      <tr>
+        <th>Invoice #</th>
+        <th>Date</th>
+        <th>Customer</th>
+        <th class="text-end">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% sales.forEach(function(sale) { %>
+        <tr>
+          <td><a href="/billing/<%= sale.id %>"><%= sale.invoice_number %></a></td>
+          <td><%= sale.date %></td>
+          <td><%= sale.customer_name || 'Walk-in' %></td>
+          <td class="text-end"><%= Number(sale.total_amount).toFixed(2) %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  document.getElementById('searchInput').addEventListener('input', function () {
+    const term = this.value.toLowerCase();
+    document.querySelectorAll('#salesTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+    });
+  });
+</script>
+
+<%- include('../partials/footer') %>

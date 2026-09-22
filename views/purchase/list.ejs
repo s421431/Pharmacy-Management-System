@@ -11,6 +11,54 @@
     <% } %>
   </div>
 
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <%= error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <form method="GET" action="/purchase" class="row g-2 mb-3">
+    <div class="col-sm-4">
+      <label class="form-label small text-muted mb-1">Supplier</label>
+      <input
+        type="text"
+        name="supplier"
+        class="form-control"
+        placeholder="Search by supplier name..."
+        value="<%= typeof filters !== 'undefined' ? filters.supplier : '' %>"
+      >
+    </div>
+    <div class="col-sm-3">
+      <label class="form-label small text-muted mb-1">From</label>
+      <input
+        type="date"
+        name="from"
+        class="form-control"
+        value="<%= typeof filters !== 'undefined' ? filters.from : '' %>"
+      >
+    </div>
+    <div class="col-sm-3">
+      <label class="form-label small text-muted mb-1">To</label>
+      <input
+        type="date"
+        name="to"
+        class="form-control"
+        value="<%= typeof filters !== 'undefined' ? filters.to : '' %>"
+      >
+    </div>
+    <div class="col-sm-2 d-flex align-items-end gap-2">
+      <button type="submit" class="btn btn-outline-secondary w-100">
+        <i class="bi bi-search"></i> Filter
+      </button>
+    </div>
+    <% if (typeof filters !== 'undefined' && (filters.supplier || filters.from || filters.to)) { %>
+      <div class="col-12">
+        <a href="/purchase" class="btn btn-sm btn-link ps-0">Clear filters</a>
+      </div>
+    <% } %>
+  </form>
+
   <div class="table-responsive">
     <table class="table table-bordered table-hover align-middle bg-white">
       <thead class="table-dark">
@@ -19,21 +67,39 @@
           <th>Supplier</th>
           <th>Purchase Date</th>
           <th class="text-end">Total Amount</th>
+          <% if (user && user.role === 'admin') { %>
+            <th style="width: 100px;">Actions</th>
+          <% } %>
         </tr>
       </thead>
       <tbody>
         <% if (purchases && purchases.length > 0) { %>
           <% purchases.forEach(function(p, index) { %>
-            <tr onclick="window.location='/purchase/<%= p.id %>'" style="cursor:pointer;">
-              <td><%= index + 1 %></td>
-              <td><%= p.supplier_name %></td>
-              <td><%= new Date(p.purchase_date).toLocaleDateString('en-IN') %></td>
-              <td class="text-end">₹<%= Number(p.total_amount).toFixed(2) %></td>
+            <tr>
+              <td style="cursor:pointer;" onclick="window.location='/purchase/<%= p.id %>'"><%= index + 1 %></td>
+              <td style="cursor:pointer;" onclick="window.location='/purchase/<%= p.id %>'"><%= p.supplier_name %></td>
+              <td style="cursor:pointer;" onclick="window.location='/purchase/<%= p.id %>'"><%= new Date(p.purchase_date).toLocaleDateString('en-IN') %></td>
+              <td class="text-end" style="cursor:pointer;" onclick="window.location='/purchase/<%= p.id %>'">₹<%= Number(p.total_amount).toFixed(2) %></td>
+              <% if (user && user.role === 'admin') { %>
+                <td>
+                  <form
+                    action="/purchase/<%= p.id %>/delete"
+                    method="POST"
+                    onsubmit="return confirm('Delete this purchase from <%= p.supplier_name %>? This cannot be undone.');"
+                  >
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              <% } %>
             </tr>
           <% }); %>
         <% } else { %>
           <tr>
-            <td colspan="4" class="text-center text-muted py-4">No purchases recorded yet.</td>
+            <td colspan="<%= user && user.role === 'admin' ? 5 : 4 %>" class="text-center text-muted py-4">
+              No purchases found<% if (typeof filters !== 'undefined' && (filters.supplier || filters.from || filters.to)) { %> matching your filters<% } %>.
+            </td>
           </tr>
         <% } %>
       </tbody>
