@@ -10,6 +10,8 @@ const authRoutes = require('./routes/auth');
 const inventoryRoutes = require('./routes/inventory');
 const purchaseRoutes = require('./routes/purchase');
 const supplierRoutes = require('./routes/supplier');
+const billingRoutes = require('./routes/billing');
+const reportsRoutes = require('./routes/reports');
 const errorHandler = require('./middleware/errorHandler');
 const db = require('./config/db');
 
@@ -35,7 +37,9 @@ app.use('/', authRoutes);
 app.use('/inventory', inventoryRoutes);
 app.use('/purchase', purchaseRoutes);
 app.use('/suppliers', supplierRoutes);
-app.use( errorHandler);
+app.use('/billing', billingRoutes);
+app.use('/reports', reportsRoutes);
+app.use(errorHandler);
 
 app.listen(PORT, async () => {
   console.log(`Pharmacy Management System running at http://localhost:${PORT}`);
