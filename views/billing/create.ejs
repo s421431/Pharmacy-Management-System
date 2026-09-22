@@ -1,0 +1,238 @@
+<%- include('../partials/header') %>
+
+<div class="container mt-4">
+  <h3 class="mb-3">New Sale / Billing</h3>
+
+  <form id="billingForm" action="/billing/create" method="POST" novalidate>
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Customer</label>
+        <select name="customer_id" class="form-select">
+          <option value="">Walk-in Customer</option>
+          <% customers.forEach(function(c) { %>
+            <option value="<%= c.id %>"><%= c.name %></option>
+          <% }); %>
+        </select>
+      </div>
+    </div>
+
+    <table class="table table-bordered align-middle" id="itemsTable">
+      <thead class="table-light">
+        <tr>
+          <th style="width:28%">Medicine</th>
+          <th style="width:28%">Batch</th>
+          <th style="width:12%">Qty</th>
+          <th style="width:12%" class="text-end">Price</th>
+          <th style="width:12%" class="text-end">Subtotal</th>
+          <th style="width:8%"></th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody"></tbody>
+    </table>
+
+    <button type="button" id="addRowBtn" class="btn btn-outline-secondary btn-sm mb-3">
+      <i class="bi bi-plus-lg"></i> Add Item
+    </button>
+
+    <div class="card w-25 ms-auto mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <span>Subtotal</span><span id="subtotalDisplay">0.00</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>GST (<span id="gstRateLabel">12</span>%)</span><span id="gstDisplay">0.00</span>
+        </div>
+        <hr class="my-1">
+        <div class="d-flex justify-content-between fw-bold">
+          <span>Total</span><span id="totalDisplay">0.00</span>
+        </div>
+        <small class="text-muted">Server total is authoritative.</small>
+      </div>
+    </div>
+
+    <button type="submit" id="submitBtn" class="btn btn-primary">
+      <span id="submitSpinner" class="spinner-border spinner-border-sm d-none me-1"></span>
+      Complete Sale
+    </button>
+  </form>
+</div>
+
+<!-- Medicine list is embedded once; batch options are fetched per row -->
+<script>
+  const MEDICINES = <%- JSON.stringify(medicines) %>;
+  const GST_RATE = 12; // adjust to match server-side rate
+
+  const itemsBody = document.getElementById('itemsBody');
+  const addRowBtn = document.getElementById('addRowBtn');
+  const form = document.getElementById('billingForm');
+
+  function medicineOptions() {
+    return '<option value="">Select medicine</option>' +
+      MEDICINES.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  }
+
+  function addRow() {
+    const tr = document.createElement('tr');
+    tr.className = 'item-row';
+    tr.innerHTML = `
+      <td>
+        <select class="form-select medicine-select" required>${medicineOptions()}</select>
+      </td>
+      <td>
+        <select class="form-select batch-select" required disabled>
+          <option value="">Select medicine first</option>
+        </select>
+      </td>
+      <td>
+        <input type="number" class="form-control qty-input" min="1" value="1" required>
+      </td>
+      <td class="text-end price-cell" data-price="0">0.00</td>
+      <td class="text-end subtotal-cell">0.00</td>
+      <td class="text-center">
+        <button type="button" class="btn btn-sm btn-outline-danger remove-row">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+    itemsBody.appendChild(tr);
+    renumberRows();
+  }
+
+  // Renumber name attributes so items[i][field] stays contiguous (0..n-1)
+  function renumberRows() {
+    document.querySelectorAll('.item-row').forEach((row, idx) => {
+      row.querySelector('.medicine-select').name = `items[${idx}][medicine_id]`;
+      row.querySelector('.batch-select').name = `items[${idx}][batch_id]`;
+      row.querySelector('.qty-input').name = `items[${idx}][quantity]`;
+    });
+  }
+
+  function calcTotals() {
+    let subtotal = 0;
+    document.querySelectorAll('.item-row').forEach(row => {
+      const price = parseFloat(row.querySelector('.price-cell').dataset.price || 0);
+      const qty = parseFloat(row.querySelector('.qty-input').value || 0);
+      const rowSub = price * qty;
+      row.querySelector('.subtotal-cell').textContent = rowSub.toFixed(2);
+      subtotal += rowSub;
+    });
+    const gst = subtotal * (GST_RATE / 100);
+    document.getElementById('subtotalDisplay').textContent = subtotal.toFixed(2);
+    document.getElementById('gstDisplay').textContent = gst.toFixed(2);
+    document.getElementById('totalDisplay').textContent = (subtotal + gst).toFixed(2);
+  }
+
+  // BUG FIX: reset + disable batch select immediately, ignore stale responses
+  function loadBatches(row) {
+    const medicineId = row.querySelector('.medicine-select').value;
+    const batchSelect = row.querySelector('.batch-select');
+    const priceCell = row.querySelector('.price-cell');
+
+    batchSelect.innerHTML = '<option value="">Loading...</option>';
+    batchSelect.disabled = true;
+    priceCell.dataset.price = 0;
+    priceCell.textContent = '0.00';
+    calcTotals();
+
+    if (!medicineId) {
+      batchSelect.innerHTML = '<option value="">Select medicine first</option>';
+      return;
+    }
+
+    // Tag this request so a slow older response can't overwrite a newer selection
+    const requestToken = Symbol();
+    row.dataset.pendingToken = requestToken.toString();
+
+    fetch(`/billing/batch-lookup/${medicineId}`)
+      .then(res => {
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        return res.json();
+      })
+      .then(batches => {
+        if (row.dataset.pendingToken !== requestToken.toString()) return; // stale
+        if (!Array.isArray(batches) || batches.length === 0) {
+          batchSelect.innerHTML = '<option value="">No batches available</option>';
+          batchSelect.disabled = true;
+          return;
+        }
+        batchSelect.innerHTML = '<option value="">Select batch</option>' +
+          batches.map(b =>
+            `<option value="${b.id}" data-price="${b.price}" data-qty="${b.quantity_available}">
+              ${b.batch_number} — exp ${b.expiry_date} — qty ${b.quantity_available} — ₹${b.price}
+            </option>`
+          ).join('');
+        batchSelect.disabled = false;
+      })
+      .catch(err => {
+        console.error('Batch lookup failed:', err);
+        batchSelect.innerHTML = '<option value="">Failed to load batches</option>';
+        batchSelect.disabled = true;
+        alert('Could not load batches for the selected medicine. Please try again.');
+      });
+  }
+
+  itemsBody.addEventListener('change', function (e) {
+    const row = e.target.closest('.item-row');
+    if (!row) return;
+
+    if (e.target.classList.contains('medicine-select')) {
+      loadBatches(row);
+    }
+
+    if (e.target.classList.contains('batch-select')) {
+      const opt = e.target.selectedOptions[0];
+      const price = opt ? parseFloat(opt.dataset.price || 0) : 0;
+      const availableQty = opt ? parseInt(opt.dataset.qty || 0, 10) : 0;
+      const priceCell = row.querySelector('.price-cell');
+      const qtyInput = row.querySelector('.qty-input');
+      priceCell.dataset.price = price;
+      priceCell.textContent = price.toFixed(2);
+      qtyInput.max = availableQty || '';
+      calcTotals();
+    }
+  });
+
+  itemsBody.addEventListener('input', function (e) {
+    if (e.target.classList.contains('qty-input')) calcTotals();
+  });
+
+  itemsBody.addEventListener('click', function (e) {
+    const btn = e.target.closest('.remove-row');
+    if (!btn) return;
+    const rows = document.querySelectorAll('.item-row');
+    if (rows.length === 1) { alert('At least one item is required.'); return; }
+    btn.closest('.item-row').remove();
+    renumberRows();
+    calcTotals();
+  });
+
+  addRowBtn.addEventListener('click', addRow);
+  addRow(); // start with one row
+
+  // Client-side guard: block submit if any qty exceeds available stock
+  form.addEventListener('submit', function (e) {
+    let valid = true;
+    document.querySelectorAll('.item-row').forEach(row => {
+      const batchSelect = row.querySelector('.batch-select');
+      const qtyInput = row.querySelector('.qty-input');
+      const opt = batchSelect.selectedOptions[0];
+      const available = opt ? parseInt(opt.dataset.qty || 0, 10) : 0;
+      const qty = parseInt(qtyInput.value || 0, 10);
+
+      if (!batchSelect.value) { valid = false; alert('Select a batch for every item.'); }
+      else if (qty < 1) { valid = false; alert('Quantity must be at least 1.'); }
+      else if (qty > available) {
+        valid = false;
+        alert(`Quantity (${qty}) exceeds available stock (${available}) for a selected batch.`);
+      }
+    });
+
+    if (!valid) { e.preventDefault(); return; }
+
+    // Double-submit prevention (same pattern as purchase/add.ejs)
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitSpinner').classList.remove('d-none');
+  });
+</script>
+
+<%- include('../partials/footer') %>

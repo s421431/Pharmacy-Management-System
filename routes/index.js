@@ -74,6 +74,58 @@ let purchases = [
     ]
   }
 ];
+// Mock in-memory customers
+let customers = [
+  { id: 'c1', name: 'Walk-in Customer' },
+  { id: 'c2', name: 'Sunita Patel' },
+  { id: 'c3', name: 'Ramesh Iyer' }
+];
+
+// Mock in-memory sales (billing)
+const _todayStr = new Date().toISOString().split('T')[0];
+const _earlierThisMonth = new Date();
+_earlierThisMonth.setDate(1);
+const _earlierThisMonthStr = _earlierThisMonth.toISOString().split('T')[0];
+
+let sales = [
+  {
+    id: 's1',
+    invoice_number: 'INV-2026-0001',
+    date: _todayStr,
+    customer_id: 'c2',
+    customer_name: 'Sunita Patel',
+    total_amount: 1904,
+    gst_amount: 204,
+    items: [
+      { medicine_name: 'Amoxicillin 500mg', batch_number: 'AMX-01', quantity: 20, price: 85 }
+    ]
+  },
+  {
+    id: 's2',
+    invoice_number: 'INV-2026-0002',
+    date: _todayStr,
+    customer_id: 'c3',
+    customer_name: 'Ramesh Iyer',
+    total_amount: 1288,
+    gst_amount: 138,
+    items: [
+      { medicine_name: 'Azithromycin 250mg', batch_number: 'AZT-99', quantity: 10, price: 115 }
+    ]
+  },
+  {
+    id: 's3',
+    invoice_number: 'INV-2026-0003',
+    date: _earlierThisMonthStr,
+    customer_id: null,
+    customer_name: 'Walk-in Customer',
+    total_amount: 1638,
+    gst_amount: 78,
+    items: [
+      { medicine_name: 'Insulin Glargine 100IU', batch_number: 'INS-04', quantity: 3, price: 520 }
+    ]
+  }
+];
+let salesInvoiceCounter = 3; // continue numbering from INV-2026-0004
 
 // Simple auth guard: redirect to /login if no session user
 function requireLogin(req, res, next) {
@@ -293,6 +345,111 @@ router.post('/purchase/:id/delete', (req, res) => {
   purchases = purchases.filter(p => String(p.id) !== String(req.params.id));
   res.redirect('/purchase');
 });
+// ---------- BILLING ROUTES ----------
+
+router.get('/billing/create', (req, res) => {
+  res.render('billing/create', { medicines, customers });
+});
+
+router.get('/billing/batch-lookup/:medicineId', (req, res) => {
+  const medicine = medicines.find(m => String(m.id) === String(req.params.medicineId));
+  if (!medicine) return res.json([]);
+
+  const availableBatches = medicine.batches
+    .filter(b => b.quantity > 0)
+    .map(b => ({
+      id: b.id,
+      batch_number: b.batch_number,
+      expiry_date: b.expiry_date,
+      price: b.selling_price,
+      quantity_available: b.quantity
+    }));
+
+  res.json(availableBatches);
+});
+
+router.post('/billing/create', (req, res) => {
+  const { customer_id, items } = req.body;
+
+  if (!items) {
+    return res.status(400).render('billing/create', {
+      medicines,
+      customers,
+      error: 'Please add at least one item.'
+    });
+  }
+
+  const itemsArray = Object.values(items);
+  let subtotal = 0;
+  let gstAmount = 0;
+  const lineItems = [];
+
+  // Validate everything before mutating any stock
+  for (const item of itemsArray) {
+    const medicine = medicines.find(m => String(m.id) === String(item.medicine_id));
+    if (!medicine) {
+      return res.status(400).render('billing/create', { medicines, customers, error: 'Invalid medicine selected.' });
+    }
+    const batch = medicine.batches.find(b => String(b.id) === String(item.batch_id));
+    if (!batch) {
+      return res.status(400).render('billing/create', { medicines, customers, error: 'Invalid batch selected.' });
+    }
+    const quantity = parseInt(item.quantity, 10) || 0;
+    if (quantity < 1 || quantity > batch.quantity) {
+      return res.status(400).render('billing/create', {
+        medicines,
+        customers,
+        error: `Requested quantity for ${medicine.name} exceeds available stock (${batch.quantity}).`
+      });
+    }
+
+    const price = batch.selling_price;
+    const lineTotal = price * quantity;
+    subtotal += lineTotal;
+    gstAmount += lineTotal * ((medicine.gst_percent || 0) / 100);
+
+    lineItems.push({ medicine, batch, quantity, price });
+  }
+
+  // All valid — now actually decrement stock
+  lineItems.forEach(({ medicine, batch, quantity }) => {
+    batch.quantity -= quantity;
+    recalculateMedicine(medicine);
+  });
+
+  const customer = customers.find(c => String(c.id) === String(customer_id));
+
+  const sale = {
+    id: 's' + Date.now(),
+    invoice_number: generateInvoiceNumber(),
+    date: new Date().toISOString().split('T')[0],
+    customer_id: customer_id || null,
+    customer_name: customer ? customer.name : 'Walk-in Customer',
+    total_amount: subtotal + gstAmount,
+    gst_amount: gstAmount,
+    items: lineItems.map(({ medicine, batch, quantity, price }) => ({
+      medicine_name: medicine.name,
+      batch_number: batch.batch_number,
+      quantity,
+      price
+    }))
+  };
+
+  sales.unshift(sale);
+  res.redirect('/billing/' + sale.id);
+});
+
+router.get('/billing/history', (req, res) => {
+  res.render('billing/history', { sales });
+});
+
+router.get('/billing/:id', (req, res) => {
+  const sale = sales.find(s => String(s.id) === String(req.params.id));
+  if (!sale) return res.redirect('/billing/history');
+
+  res.render('billing/invoice', { sale, items: sale.items });
+});
+
 
 // ---------- SUPPLIER ROUTES ----------
 
@@ -318,6 +475,26 @@ router.post('/suppliers/add', (req, res) => {
   });
 
   res.redirect('/purchase/add');
+});
+
+module.exports = router;
+// ---------- REPORTS ROUTES ----------
+
+router.get('/reports/dashboard', (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const thisMonth = today.slice(0, 7); // 'YYYY-MM'
+
+  // TODO: replace with real sales data once billing writes to a `sales` store.
+  res.render('reports/dashboard', {
+    todaySales: 0,
+    monthSales: 0,
+    monthGst: 0,
+    topMedicines: [],
+    lowStockCount: medicines.filter(m => m.total_quantity < 20).length,
+    nearExpiryCount: medicines.filter(m =>
+      m.nearest_expiry && new Date(m.nearest_expiry) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    ).length
+  });
 });
 
 module.exports = router;

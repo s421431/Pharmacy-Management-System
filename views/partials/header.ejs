@@ -31,20 +31,23 @@
           <a class="nav-link" href="/dashboard">Dashboard</a>
           <a class="nav-link" href="/inventory">Inventory</a>
           <a class="nav-link" href="/purchase">Purchases</a>
-          <a class="nav-link" href="#">Billing</a>
-          <a class="nav-link" href="#">Reports</a>
+          <!-- AFTER -->
+<a class="nav-link" href="/billing/history">Billing</a>
+<a class="nav-link" href="/reports/dashboard">Reports</a>
         </div>
 
         <% if (typeof user !== 'undefined' && user) { %>
           <ul class="navbar-nav align-items-center">
-            <li class="nav-item dropdown">
-              
-                class="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white"
-                href="#"
-                id="userMenu"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
+           <!-- AFTER -->
+<li class="nav-item dropdown">
+  
+    class="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white"
+    href="#"
+    id="userMenu"
+    role="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+  >
               >
                 <span><%= user.name %></span>
                 <span class="badge bg-primary text-uppercase"><%= user.role %></span>
