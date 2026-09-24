@@ -26,5 +26,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
+  },
+  "allowScripts": {
+    "bcrypt@6.0.0": true
   }
 }

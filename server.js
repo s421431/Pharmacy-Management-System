@@ -8,7 +8,6 @@ const session = require('express-session');
 
 const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
-<<<<<<< HEAD
 const inventoryRoutes = require('./routes/inventory');
 const purchaseRoutes = require('./routes/purchase');
 const supplierRoutes = require('./routes/supplier');
@@ -17,8 +16,6 @@ const reportsRoutes = require('./routes/reports');
 const errorHandler = require('./middleware/errorHandler');
 const db = require('./config/db');
 
-=======
->>>>>>> 2a2cc3c32194044fc173ab2e7c9408884c9f5746
 const { testConnection } = require('./config/db');
 
 const app = express();
@@ -51,16 +48,13 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/', authRoutes);
-<<<<<<< HEAD
 app.use('/inventory', inventoryRoutes);
+app.use('/', indexRoutes);
 app.use('/purchase', purchaseRoutes);
 app.use('/suppliers', supplierRoutes);
 app.use('/billing', billingRoutes);
 app.use('/reports', reportsRoutes);
 app.use(errorHandler);
-=======
-app.use('/', indexRoutes);
->>>>>>> 2a2cc3c32194044fc173ab2e7c9408884c9f5746
 
 app.listen(PORT, async () => {
   console.log(`Pharmacy Management System running at http://localhost:${PORT}`);
@@ -68,7 +62,11 @@ app.listen(PORT, async () => {
   // Verify the DB is reachable as soon as the server comes up, so a bad
   // .env or a stopped MySQL instance shows up immediately in the logs
   // instead of surfacing later as a confusing query error.
+const db = require('./config/db');
+const { testConnection } = require('./config/db'); 
+
   const dbOk = await testConnection();
+
   if (!dbOk) {
     console.error('⚠️  Server is running, but database connection failed. Check your .env values.');
   }

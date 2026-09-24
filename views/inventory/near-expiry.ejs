@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- include('../partials/head') %><title>Near Expiry</title></head>
+<body>
+<%- include('../partials/navbar') %>
+<div class="container mt-4">
+  <h1>Near Expiry (next 30 days)</h1>
+  <table class="table table-striped">
+    <thead><tr><th>Medicine</th><th>Batch</th><th>Expiry</th><th>Qty</th></tr></thead>
+    <tbody>
+      <% batches.forEach(b => { %><tr><td><%= b.medicine_name %></td><td><%= b.batch_number %></td><td class="text-danger"><%= b.expiry_date.toISOString().split('T')[0] %></td><td><%= b.quantity %></td></tr><% }) %>
+      <% if (batches.length === 0) { %><tr><td colspan="4" class="text-center text-muted">Nothing expiring soon.</td></tr><% } %>
+    </tbody>
+  </table>
+  <a href="/inventory">Back to Inventory</a>
+</div>
+</body>
+</html>

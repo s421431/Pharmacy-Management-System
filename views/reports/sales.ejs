@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><%- include('../partials/head') %><title>Sales Report</title></head>
+<body>
+<%- include('../partials/navbar') %>
+<div class="container mt-4">
+  <h1>Sales by Date Range</h1>
+  <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+  <form method="GET" class="row mb-3">
+    <div class="col-auto"><input type="date" name="from" value="<%= from %>" class="form-control" required></div>
+    <div class="col-auto"><input type="date" name="to" value="<%= to %>" class="form-control" required></div>
+    <div class="col-auto"><button class="btn btn-primary">Filter</button></div>
+  </form>
+  <table class="table table-striped">
+    <thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th></tr></thead>
+    <tbody>
+      <% sales.forEach(s => { %><tr><td><%= s.invoice_number %></td><td><%= s.sale_date.toISOString().split('T')[0] %></td><td><%= s.customer_name || 'Walk-in' %></td><td>₹<%= s.total_amount %></td></tr><% }) %>
+    </tbody>
+  </table>
+  <p><strong>Total: ₹<%= total_amount %></strong> | <strong>GST: ₹<%= total_gst %></strong></p>
+</div>
+</body>
+</html>

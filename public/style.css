@@ -1,6 +1,85 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f4f6f8;
-  color: #1a1a1a;
+:root {
+  --sidebar-w: 230px;
+  --primary: #0f766e;      /* teal — main brand color */
+  --primary-dark: #115e59;
+  --accent: #f59e0b;       /* amber — highlights, warnings */
+  --danger: #dc2626;
+  --bg: #f4f6f8;
+  --card-bg: #ffffff;
+  --text-muted: #6b7280;
 }
+
+body {
+  padding-left: var(--sidebar-w);
+  background: var(--bg);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--primary-dark);
+  color: #e5f3f1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0;
+  overflow-y: auto;
+}
+.sidebar .brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0 1.25rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  margin-bottom: 0.75rem;
+}
+.sidebar a {
+  color: #cfe8e4;
+  text-decoration: none;
+  padding: 0.65rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  border-left: 3px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.sidebar a:hover, .sidebar a.active {
+  background: rgba(255,255,255,0.08);
+  border-left-color: var(--accent);
+  color: #fff;
+}
+.sidebar .section-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7fb6ae;
+  padding: 1rem 1.25rem 0.35rem;
+}
+.sidebar .user-box {
+  margin-top: auto;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  font-size: 0.85rem;
+}
+
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  background: var(--card-bg);
+}
+.card h3 { color: var(--primary-dark); font-weight: 700; }
+
+.btn-primary { background: var(--primary); border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+.btn-outline-primary { color: var(--primary); border-color: var(--primary); }
+.btn-outline-primary:hover { background: var(--primary); border-color: var(--primary); }
+
+.table thead { background: #eef2f1; }
+.text-danger { color: var(--danger) !important; }
+.text-warning { color: var(--accent) !important; }
+
+h1 { color: var(--primary-dark); font-weight: 700; font-size: 1.6rem; }

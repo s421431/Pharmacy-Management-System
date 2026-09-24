@@ -1,0 +1,23 @@
+<div class="sidebar">
+  <div class="brand">💊 PharmaSys</div>
+
+  <div class="section-label">Main</div>
+  <a href="/">Dashboard</a>
+  <a href="/inventory">Inventory</a>
+  <a href="/purchase">Purchases</a>
+  <a href="/billing">Billing</a>
+  <a href="/reports">Reports</a>
+
+  <% if (user && user.role === 'admin') { %>
+  <div class="section-label">Admin</div>
+  <a href="/suppliers/add">Add Supplier</a>
+  <a href="/inventory/add">Add Medicine</a>
+  <% } %>
+
+  <% if (user) { %>
+  <div class="user-box">
+    <%= user.name %> · <%= user.role %><br>
+    <a href="/logout" style="padding:0; margin-top:4px; display:inline;">Logout</a>
+  </div>
+  <% } %>
+</div>
