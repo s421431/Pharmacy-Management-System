@@ -8,31 +8,25 @@ const session = require('express-session');
 
 const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
-const inventoryRoutes = require('./routes/inventory');
+// const inventoryRoutes = require('./routes/inventory'); // MySQL version — not wired in yet, see routes/index.js for the mock-data /inventory routes currently in use
 const purchaseRoutes = require('./routes/purchase');
 const supplierRoutes = require('./routes/supplier');
 const billingRoutes = require('./routes/billing');
 const reportsRoutes = require('./routes/reports');
 const errorHandler = require('./middleware/errorHandler');
-const db = require('./config/db');
-
 const { testConnection } = require('./config/db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// View engine setup (EJS templates live in /views)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Serve static assets (CSS, client JS, images) from /public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Parse JSON / form bodies (useful once you add forms for pharmacy data)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Sessions (needed for login/logout) — must be set up BEFORE any routes
 app.use(session({
   secret: 'pharmacy-dev-secret-change-this-in-production',
   resave: false,
@@ -40,7 +34,6 @@ app.use(session({
   cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8 hour session
 }));
 
-// Make the logged-in user available to every view automatically
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
@@ -48,8 +41,8 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/', authRoutes);
-app.use('/inventory', inventoryRoutes);
-app.use('/', indexRoutes);
+// app.use('/inventory', inventoryRoutes); // re-enable once mock data is migrated to MySQL and Medicine/Batch tables exist
+app.use('/', indexRoutes); // handles /inventory (mock data), /dashboard, purchase, billing routes, etc.
 app.use('/purchase', purchaseRoutes);
 app.use('/suppliers', supplierRoutes);
 app.use('/billing', billingRoutes);
@@ -59,14 +52,7 @@ app.use(errorHandler);
 app.listen(PORT, async () => {
   console.log(`Pharmacy Management System running at http://localhost:${PORT}`);
 
-  // Verify the DB is reachable as soon as the server comes up, so a bad
-  // .env or a stopped MySQL instance shows up immediately in the logs
-  // instead of surfacing later as a confusing query error.
-const db = require('./config/db');
-const { testConnection } = require('./config/db'); 
-
   const dbOk = await testConnection();
-
   if (!dbOk) {
     console.error('⚠️  Server is running, but database connection failed. Check your .env values.');
   }

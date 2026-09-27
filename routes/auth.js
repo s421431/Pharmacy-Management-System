@@ -61,6 +61,11 @@ router.post('/register', async (req, res) => {
 });
 
 router.get('/logout', (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+  res.render('auth/logout-confirm');
+});
+
+router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.redirect('/login');
   });

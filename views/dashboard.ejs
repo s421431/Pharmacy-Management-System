@@ -8,7 +8,64 @@
 <%- include('partials/sidebar') %>
 <div class="container mt-4">
   <h1>Pharmacy Dashboard</h1>
-  <p class="text-muted">Welcome, <%= user ? user.name : 'Guest' %>.</p>
+  <p class="text-muted mb-4">Welcome, <%= user ? user.name : 'Guest' %>.</p>
+
+  <!-- Stat cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <a href="/inventory" class="text-decoration-none">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small mb-1">Total Medicines</div>
+            <div class="fs-3 fw-bold text-dark"><%= inventoryItemsCount %></div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="/purchase" class="text-decoration-none">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small mb-1">Pending Purchases</div>
+            <div class="fs-3 fw-bold text-dark"><%= pendingPurchasesCount %></div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="/inventory" class="text-decoration-none">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small mb-1">Low Stock</div>
+            <div class="fs-3 fw-bold <%= lowStockCount > 0 ? 'text-danger' : 'text-dark' %>"><%= lowStockCount %></div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="/inventory" class="text-decoration-none">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small mb-1">Near Expiry (30d)</div>
+            <div class="fs-3 fw-bold <%= nearExpiryCount > 0 ? 'text-warning' : 'text-dark' %>"><%= nearExpiryCount %></div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h6 class="text-muted mb-3">Quick Actions</h6>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/inventory/add" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Medicine</a>
+        <a href="/purchase/add" class="btn btn-outline-primary"><i class="bi bi-cart-plus me-1"></i>New Purchase</a>
+        <a href="/billing/create" class="btn btn-outline-primary"><i class="bi bi-receipt me-1"></i>Create Bill</a>
+        <a href="/suppliers/add" class="btn btn-outline-secondary"><i class="bi bi-person-plus me-1"></i>Add Supplier</a>
+      </div>
+    </div>
+  </div>
 </div>
 </body>
 </html>

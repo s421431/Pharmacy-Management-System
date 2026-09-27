@@ -1,0 +1,74 @@
+/* theme.css — PharmaSys teal color scheme, applied site-wide */
+
+:root {
+  --pharma-teal: #0f5c52;
+  --pharma-teal-dark: #0b453d;
+  --pharma-teal-light: #147a6c;
+  --pharma-accent: #ff6b47; /* the little pill/capsule icon color */
+}
+
+/* Navbar */
+.navbar.bg-dark {
+  background-color: var(--pharma-teal) !important;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link.active {
+  color: #ffffff;
+}
+
+/* Primary buttons */
+.btn-primary {
+  background-color: var(--pharma-teal);
+  border-color: var(--pharma-teal);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--pharma-teal-dark);
+  border-color: var(--pharma-teal-dark);
+}
+
+.btn-outline-primary {
+  color: var(--pharma-teal);
+  border-color: var(--pharma-teal);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--pharma-teal);
+  border-color: var(--pharma-teal);
+}
+
+/* Badges (role badge, status badges, etc.) */
+.badge.bg-primary {
+  background-color: var(--pharma-teal) !important;
+}
+
+/* Links */
+a {
+  color: var(--pharma-teal);
+}
+
+a:hover {
+  color: var(--pharma-teal-dark);
+}
+
+/* Headings (page titles like "Inventory", "Pharmacy Dashboard") */
+h1, h2, h3.page-title {
+  color: var(--pharma-teal-dark);
+}
+
+/* Table headers */
+.table-dark {
+  background-color: var(--pharma-teal-dark);
+}
+
+/* Dropdown active/hover state */
+.dropdown-item:active,
+.dropdown-item.active {
+  background-color: var(--pharma-teal);
+}

@@ -150,9 +150,16 @@ router.use(requireLogin);
 // Shared dashboard render logic
 function renderDashboard(req, res) {
   const pendingPurchasesCount = purchases.filter(p => p.status === 'pending').length;
+  const lowStockCount = medicines.filter(m => m.total_quantity < 10).length;
+  const nearExpiryCount = medicines.filter(m =>
+    m.nearest_expiry && new Date(m.nearest_expiry) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  ).length;
+
   res.render('dashboard', {
     inventoryItemsCount: medicines.length,
-    pendingPurchasesCount
+    pendingPurchasesCount,
+    lowStockCount,
+    nearExpiryCount
   });
 }
 
